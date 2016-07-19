@@ -69,9 +69,10 @@
 }
 
 
+
 .modal-content {
   position: relative;
-  background-color: rgba(255, 220, 134, 0.74);
+  background-color: rgba(255, 205, 124, 1);
   border: 1px solid #999999;
   border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 6.25px;
@@ -80,6 +81,8 @@
   background-clip: padding-box;
   outline: 0;
 }
+
+
 
 .modal-header {
   padding: 15px;
