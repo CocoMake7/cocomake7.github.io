@@ -6782,3 +6782,7 @@ body {
 .coco-modal-header {
   color: #ffffff;
 }
+.coco-workshop-pattern {
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAHCAYAAADEUlfTAAAAGklEQVQIHWNkYGCQBGKcAKckE04tQImBkAQAKQUAPhxBIc4AAAAASUVORK5CYII=
+) repeat;
+}
