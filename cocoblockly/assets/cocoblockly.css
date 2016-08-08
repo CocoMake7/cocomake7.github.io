@@ -75,11 +75,11 @@ div#panes>.active {
 }
 
 .navbar-brand {
-    padding: 9px
+    /*padding: 9px*/
 }
 
 .navbar-default {
-    background-color: #fff
+    /*background-color: #fff*/
 }
 
 #wrapper>nav {
