@@ -1,6 +1,8 @@
 
 var CocoBlockly = CocoBlockly || {};
 
+CocoBlockly.code = "";
+
 CocoBlockly.executeBlockCode = function() {
   var code = Blockly.Arduino.workspaceToCode(CocoBlockly.workspace);
   console.log('play');
@@ -9,6 +11,9 @@ CocoBlockly.executeBlockCode = function() {
 CocoBlockly.myUpdateFunction = function(event) {
   var doc = CocoBlockly.CodeMirror.getDoc();
   var code = Blockly.Arduino.workspaceToCode(CocoBlockly.workspace)
+
+  CocoBlockly.code = code;
+
   CocoBlockly.CodeMirror.getDoc().setValue(code)
   CocoBlockly.CodeMirrorPreview.getDoc().setValue(code)
   
@@ -126,6 +131,38 @@ window.addEventListener('load', function load(event) {
       readOnly: true,
       mode: "application/xml"
     });
+
+
+    CocoBlockly.sendRpc = function(command, params, cb)
+    {
+      var request = {};
+      request.method = "coco." + command;
+      request.id = 1;
+      request.jsonrpc = "2.0";
+      request.params = params;
+
+      $.ajax({
+          url: 'http://localhost:8118/',
+          type: 'post',
+          data: JSON.stringify(request),
+          headers: {
+              'Accept': 'application/json-rpc', 
+              'Content-Type': 'application/json'
+          },
+          dataType: 'json',
+          success: cb
+      });
+    }
+
+    CocoBlockly.compile = function()
+    {
+      CocoBlockly.sendRpc("compileArduinoScript",[CocoBlockly.code], function(data) {
+                alert('compilation finished, click next and replug cocomake7..')
+                CocoBlockly.sendRpc("uploadArduinoScript",["none"], function(data) {
+                  alert('upload finished..')
+                });
+          });
+    }
                               
     CocoBlockly.workspace.addChangeListener(CocoBlockly.myUpdateFunction);
 
@@ -133,6 +170,7 @@ window.addEventListener('load', function load(event) {
     document.getElementById("btn-mode-code").onclick = function(){CocoBlockly.tabClick('code')};
     document.getElementById("btn-mode-xml").onclick = function(){CocoBlockly.tabClick('xml')};
     document.getElementById("btn-mode-midi").onclick = function(){CocoBlockly.tabClick('midi')};
+    document.getElementById("btn-mode-compile").onclick = function(){CocoBlockly.compile()};
 
     var svgresize = function() {
         Blockly.svgResize(CocoBlockly.workspace);
