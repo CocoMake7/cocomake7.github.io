@@ -79,7 +79,7 @@ CocoBlockly.setProgressBar = function(value) {
 }
 
 CocoBlockly.rpc = {};
-CocoBlockly.rpc.socket = io("http://localhost:3000",{forceJSONP: true});
+CocoBlockly.rpc.socket = io("ws://localhost:3000",{forceJSONP: true, jsonp: true});
 CocoBlockly.rpc.globalCounter = 0;
 
 CocoBlockly.rpc.processRpcBroadcast = function(data)
