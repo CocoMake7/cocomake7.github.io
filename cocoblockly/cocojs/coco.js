@@ -34,7 +34,7 @@ CocoBlockly.tabClick = function(clickedName) {
     document.getElementById("pane-blocks").className = "tab-pane active";
     document.getElementById("pane-xml").className = "tab-pane";    
     document.getElementById("pane-code").className = "tab-pane";
-    document.getElementById("pane-midi").className = "tab-pane";
+    document.getElementById("pane-console").className = "tab-pane";
 
     document.body.className = "simulator";
   }
@@ -44,7 +44,7 @@ CocoBlockly.tabClick = function(clickedName) {
     document.getElementById("pane-blocks").className = "tab-pane";
     document.getElementById("pane-xml").className = "tab-pane";    
     document.getElementById("pane-code").className = "tab-pane active";
-    document.getElementById("pane-midi").className = "tab-pane";
+    document.getElementById("pane-console").className = "tab-pane";
 
     document.body.className = "";
 
@@ -55,23 +55,105 @@ CocoBlockly.tabClick = function(clickedName) {
     document.getElementById("pane-blocks").className = "tab-pane";
     document.getElementById("pane-code").className = "tab-pane";
     document.getElementById("pane-xml").className = "tab-pane active";
-    document.getElementById("pane-midi").className = "tab-pane";
+    document.getElementById("pane-console").className = "tab-pane";
 
     document.body.className = "";
   }
 
 
-  if (clickedName == 'midi') {
+  if (clickedName == 'console') {
     CocoBlockly.workspace.setVisible(false);
     document.getElementById("pane-blocks").className = "tab-pane";
     document.getElementById("pane-code").className = "tab-pane";
     document.getElementById("pane-xml").className = "tab-pane";
-    document.getElementById("pane-midi").className = "tab-pane active";
+    document.getElementById("pane-console").className = "tab-pane active";
 
     document.body.className = "";
   }
 
 };
+
+
+CocoBlockly.setProgressBar = function(value) {
+  $('.progress-bar').css('width', value+'%').attr('aria-valuenow', value);
+}
+
+CocoBlockly.rpc = {};
+CocoBlockly.rpc.socket = io("http://localhost:3000");
+CocoBlockly.rpc.globalCounter = 0;
+
+CocoBlockly.rpc.processRpcBroadcast = function(data)
+{ 
+var command = data['command'];
+var params = data['params'];
+
+switch (command) {
+  case 'console':
+    // console.log(params);
+    CocoBlockly.CodeMirrorConsole.replaceRange(params, {line: Infinity});
+    CocoBlockly.CodeMirrorConsole.setCursor(CocoBlockly.CodeMirrorConsole.lastLine());
+    break;
+  case 'progress':
+    if (params === '100'  ) {
+      CocoBlockly.setProgressBar(0);
+      //setTimeout(function(){CocoBlockly.setProgressBar(0); }, 250);
+    }else {
+      CocoBlockly.setProgressBar(params);              
+    }
+    break;
+  default:
+    break;
+}
+}
+
+CocoBlockly.rpc.socket.on('statusRPC', function(msg){
+  CocoBlockly.rpc.processRpcBroadcast(msg);
+});
+
+CocoBlockly.rpc.sendBasicRpc = function(command, fun)
+{
+ var localCallCounter = ++CocoBlockly.rpc.globalCounter;
+ CocoBlockly.rpc.socket.once('doneRPC' + localCallCounter, function (data) {
+     fun ( data );
+ });
+ CocoBlockly.rpc.socket.emit('doRPC', localCallCounter, command);
+}
+
+CocoBlockly.rpc.sendRpcParam = function (cmd, param, fun)
+{
+  var command = {command: cmd};
+  command.params = param;
+  CocoBlockly.rpc.sendBasicRpc(command, fun);
+}
+
+CocoBlockly.rpcUploadCode = function(code, fun)
+{
+  CocoBlockly.rpc.sendRpcParam('upload', '', fun);
+}
+
+CocoBlockly.rpcCompileCode = function(code, fun)
+{
+  CocoBlockly.rpc.sendRpcParam('compile', code, fun);
+}
+
+CocoBlockly.upload = function()
+{
+  CocoBlockly.CodeMirrorConsole.getDoc().setValue("");
+  CocoBlockly.rpcCompileCode(CocoBlockly.code, function(){
+    CocoBlockly.CodeMirrorConsole.getDoc().setValue("");
+    CocoBlockly.rpc.sendRpcParam('upload', '', function(){
+      console.log('upload done..');
+    });
+  });
+}
+
+CocoBlockly.compile = function()
+{
+  CocoBlockly.CodeMirrorConsole.getDoc().setValue("");
+  CocoBlockly.rpcCompileCode(CocoBlockly.code, function(){
+    console.log('compile done..');
+  });
+}
 
 
 window.addEventListener('load', function load(event) {
@@ -132,45 +214,23 @@ window.addEventListener('load', function load(event) {
       mode: "application/xml"
     });
 
-
-    CocoBlockly.sendRpc = function(command, params, cb)
+    CocoBlockly.CodeMirrorConsole = CodeMirror.fromTextArea(document.getElementById("consoleDiv"), 
     {
-      var request = {};
-      request.method = "coco." + command;
-      request.id = 1;
-      request.jsonrpc = "2.0";
-      request.params = params;
-
-      $.ajax({
-          url: 'http://localhost:8118/',
-          type: 'post',
-          data: JSON.stringify(request),
-          headers: {
-              'Accept': 'application/json-rpc', 
-              'Content-Type': 'application/json'
-          },
-          dataType: 'json',
-          success: cb
-      });
-    }
-
-    CocoBlockly.compile = function()
-    {
-      CocoBlockly.sendRpc("compileArduinoScript",[CocoBlockly.code], function(data) {
-                alert('compilation finished, click next and replug cocomake7..')
-                CocoBlockly.sendRpc("uploadArduinoScript",["none"], function(data) {
-                  alert('upload finished..')
-                });
-          });
-    }
+      lineNumbers: true,
+      lineWrapping: true,
+      readOnly: true,
+      mode: "application/xml"
+    });
                               
     CocoBlockly.workspace.addChangeListener(CocoBlockly.myUpdateFunction);
 
     document.getElementById("btn-mode-blocks").onclick = function(){CocoBlockly.tabClick('blocks')};
     document.getElementById("btn-mode-code").onclick = function(){CocoBlockly.tabClick('code')};
     document.getElementById("btn-mode-xml").onclick = function(){CocoBlockly.tabClick('xml')};
-    document.getElementById("btn-mode-midi").onclick = function(){CocoBlockly.tabClick('midi')};
+    document.getElementById("btn-mode-console").onclick = function(){CocoBlockly.tabClick('console')};
     document.getElementById("btn-mode-compile").onclick = function(){CocoBlockly.compile()};
+    document.getElementById("btn-mode-upload").onclick = function(){CocoBlockly.upload()};
+
 
     var svgresize = function() {
         Blockly.svgResize(CocoBlockly.workspace);
@@ -181,5 +241,6 @@ window.addEventListener('load', function load(event) {
         minSize: 200,
         onDragEnd: svgresize
     });
+
 
 });
