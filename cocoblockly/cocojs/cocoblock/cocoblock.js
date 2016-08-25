@@ -8,6 +8,7 @@
  *     The arduino built in functions syntax can be found in
  *     http://arduino.cc/en/Reference/HomePage
  */
+ //test
 'use strict';
 
 goog.provide('Blockly.Blocks.coco');
